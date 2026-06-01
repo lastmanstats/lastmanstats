@@ -1,0 +1,42 @@
+name: Daily Football Content
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # ogni giorno alle 08:00 UTC (10:00 ora italiana)
+  workflow_dispatch:      # trigger manuale per testare
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: python main.py
+
+      - name: Upload TikTok video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-${{ github.run_id }}
+          path: tiktok_*.mp4
+          retention-days: 7
