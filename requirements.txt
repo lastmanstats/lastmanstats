@@ -12,5 +12,12 @@ feedparser==6.0.11
 Pillow==10.4.0
 
 # Client ufficiale Google Gemini API
-# Documentazione: https://ai.google.dev/gemini-api/docs/quickstart?lang=python
 google-generativeai==0.8.3
+
+# YouTube Data API v3 — upload automatico
+google-api-python-client==2.151.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1
+
+# Caricamento variabili d'ambiente da file .env (solo locale)
+python-dotenv==1.0.1

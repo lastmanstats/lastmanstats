@@ -18,8 +18,23 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install system deps
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg unzip
+
+      - name: Download fonts
+        run: |
+          mkdir -p fonts
+          # Bebas Neue da Google Fonts
+          curl -sL "https://fonts.google.com/download?family=Bebas+Neue" -o /tmp/bebas.zip && \
+            unzip -o /tmp/bebas.zip -d /tmp/bebas/ && \
+            cp /tmp/bebas/BebasNeue-Regular.ttf fonts/ && \
+            echo "[OK] Bebas Neue installato" || echo "[WARN] Bebas Neue non scaricato - uso font di sistema"
+          # Inter da Google Fonts
+          curl -sL "https://fonts.google.com/download?family=Inter" -o /tmp/inter.zip && \
+            unzip -o /tmp/inter.zip -d /tmp/inter/ && \
+            cp /tmp/inter/static/Inter-Regular.ttf fonts/ && \
+            echo "[OK] Inter installato" || echo "[WARN] Inter non scaricato - uso font di sistema"
+          ls fonts/ || true
 
       - name: Install Python deps
         run: pip install -r requirements.txt
@@ -33,10 +48,10 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: python main.py
 
-      - name: Upload TikTok video
+      - name: Upload TikTok video artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tiktok-${{ github.run_id }}
-          path: tiktok_*.mp4
+          path: output/**/tiktok_*.mp4
           retention-days: 7

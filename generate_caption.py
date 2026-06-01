@@ -24,7 +24,7 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-MODEL_NAME = "gemini-2.0-flash-exp"
+MODEL_NAME = "gemini-2.0-flash"
 MODEL_FALLBACK = "gemini-1.5-flash"
 
 GENERATION_CONFIG = {

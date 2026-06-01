@@ -57,12 +57,16 @@ def darken_color(color: tuple, factor: float = 0.35) -> tuple:
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
+    local_fonts = Path(__file__).parent / "fonts"
     if bold:
         candidates = [
-            # Bebas Neue — Font 1 Stadio Broadcast, titoli display
+            # Cartella locale fonts/ (GitHub Actions la popola nel workflow)
+            str(local_fonts / "BebasNeue-Regular.ttf"),
+            # Percorsi sistema Linux
             "/usr/share/fonts/truetype/bebas-neue/BebasNeue-Regular.ttf",
             "/usr/share/fonts/opentype/bebas-neue/BebasNeue-Regular.otf",
             "/home/ubuntu/.local/share/fonts/BebasNeue-Regular.ttf",
+            "/home/runner/.local/share/fonts/BebasNeue-Regular.ttf",
             "/home/opc/.local/share/fonts/BebasNeue-Regular.ttf",
             # fallback
             "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
@@ -73,10 +77,13 @@ def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
         ]
     else:
         candidates = [
-            # Inter — Font 1 Stadio Broadcast, corpo e statistiche
+            # Cartella locale fonts/ (GitHub Actions la popola nel workflow)
+            str(local_fonts / "Inter-Regular.ttf"),
+            # Percorsi sistema Linux
             "/usr/share/fonts/truetype/inter/Inter-Regular.ttf",
-            "/usr/share/fonts/truetype/inter/Inter-Medium.ttf",
+            "/usr/share/fonts/opentype/inter/Inter-Regular.ttf",
             "/home/ubuntu/.local/share/fonts/Inter-Regular.ttf",
+            "/home/runner/.local/share/fonts/Inter-Regular.ttf",
             "/home/opc/.local/share/fonts/Inter-Regular.ttf",
             # fallback
             "/usr/share/fonts/dejavu/DejaVuSans.ttf",

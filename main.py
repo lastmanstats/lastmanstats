@@ -16,6 +16,12 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -128,6 +134,45 @@ def build_video_params(match_data: dict, caption_data: dict) -> dict:
     }
 
 
+def step_upload_youtube(video_path: str, caption_data: dict, match_data: dict) -> str:
+    logger.info("=== STEP 4: Upload YouTube ===")
+    if not video_path:
+        logger.warning("Nessun video YouTube da caricare.")
+        return ""
+
+    upload_module = import_module_safe("upload_youtube")
+    if not upload_module:
+        logger.error("Modulo upload_youtube non disponibile.")
+        return ""
+
+    try:
+        hook = caption_data.get("hook", "World Cup 2026")
+        caption = caption_data.get("caption", "")
+        hashtags = caption_data.get("hashtags", [])
+        home = match_data.get("homeTeam", "")
+        away = match_data.get("awayTeam", "")
+
+        title = f"{hook} | {home} vs {away} | #WorldCup2026"
+        description = (
+            f"{caption}\n\n"
+            + " ".join(hashtags)
+            + "\n\n#WorldCup2026 #FIFA2026 #LastManStats\n\n"
+            "Follow @lastmanstats for daily World Cup 2026 stats!"
+        )
+        tags = [h.lstrip("#") for h in hashtags] + ["WorldCup2026", "FIFA2026", "LastManStats"]
+
+        video_id = upload_module.upload_video(
+            video_path=video_path,
+            title=title,
+            description=description,
+            tags=tags
+        )
+        return video_id or ""
+    except Exception as e:
+        logger.error(f"Errore in upload_youtube: {e}")
+        return ""
+
+
 def step_generate_video(match_data: dict, caption_data: dict, output_date_dir: str) -> dict:
     """Genera due video: 15s per TikTok e 62s per YouTube Shorts (Option C)."""
     logger.info("=== STEP 3: Generazione video (TikTok 15s + YouTube 62s) ===")
@@ -199,10 +244,15 @@ def main(dry_run: bool = False):
     caption_data = step_generate_caption(match_data)
 
     video_paths = {"tiktok": "", "youtube": ""}
+    youtube_video_id = ""
     if not dry_run:
         video_paths = step_generate_video(match_data, caption_data, TODAY)
+        youtube_video_id = step_upload_youtube(
+            video_paths.get("youtube", ""), caption_data, match_data
+        )
     else:
         logger.info("=== STEP 3: Generazione video SALTATA (dry-run) ===")
+        logger.info("=== STEP 4: Upload YouTube SALTATO (dry-run) ===")
 
     save_metadata(output_base, match_data, caption_data, video_paths)
 
@@ -215,6 +265,8 @@ def main(dry_run: bool = False):
     logger.info(f"  Hook:    {caption_data.get('hook', 'N/A')}")
     logger.info(f"  Caption: {caption_data.get('caption', 'N/A')[:80]}")
     logger.info(f"  Tags:    {' '.join(caption_data.get('hashtags', []))}")
+    if youtube_video_id:
+        logger.info(f"  YouTube: https://youtu.be/{youtube_video_id}")
     logger.info(f"  Output:  {output_base}/")
     logger.info("=" * 60)
 
