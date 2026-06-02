@@ -232,6 +232,12 @@ def generate_upset_video(
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     slug = f"upset_{template_key}_{today}"
 
+    # Templates without a meaningful score (penalties, dark horse) use None
+    # so the hook scene shows the team TLA instead of "0 - 0".
+    score_required = TEMPLATES[template_key].get("score_required", True)
+    hook_home = score_home if score_required else None
+    hook_away = score_away if score_required else None
+
     path_tiktok = vg.generate_video(
         headline=headline,
         subtext=subtext,
@@ -243,6 +249,8 @@ def generate_upset_video(
         output_filename=f"tiktok_{slug}",
         output_subdir=today,
         duration_seconds=vg.DURATION_SHORT,
+        score_home=hook_home,
+        score_away=hook_away,
     )
     print(f"[OK] TikTok:  {path_tiktok}")
 
@@ -257,6 +265,8 @@ def generate_upset_video(
         output_filename=f"youtube_{slug}",
         output_subdir=today,
         duration_seconds=vg.DURATION_LONG,
+        score_home=hook_home,
+        score_away=hook_away,
     )
     print(f"[OK] YouTube: {path_youtube}")
 

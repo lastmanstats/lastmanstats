@@ -2,7 +2,8 @@ name: Daily Football Content
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # 08:00 UTC / 10:00 ora italiana
+    - cron: '0 8 * * *'   # 08:00 UTC — morning pre-match briefing
+    - cron: '30 22 * * *'  # 22:30 UTC — post-match evening results
   workflow_dispatch:
     inputs:
       mode:

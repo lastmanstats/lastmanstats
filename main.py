@@ -157,6 +157,8 @@ def build_video_params(match_data: dict, caption_data: dict) -> dict:
         "team2": away_tla,
         "accent_color": get_accent_color(home_tla, away_tla),
         "timestamp_badge": compute_timestamp_badge(match_data),
+        "score_home": match_data.get("scoreHome"),
+        "score_away": match_data.get("scoreAway"),
     }
 
 
@@ -241,7 +243,9 @@ def step_generate_video(match_data: dict, caption_data: dict,
             audio_path=audio_path,
             output_filename=f"tiktok_{output_date_dir}",
             output_subdir=output_date_dir,
-            duration_seconds=video_module.DURATION_SHORT
+            duration_seconds=video_module.DURATION_SHORT,
+            score_home=params.get("score_home"),
+            score_away=params.get("score_away"),
         )
         logger.info(f"[OK] TikTok: {path_tiktok}")
 
@@ -255,7 +259,9 @@ def step_generate_video(match_data: dict, caption_data: dict,
             audio_path=audio_path,
             output_filename=f"youtube_{output_date_dir}",
             output_subdir=output_date_dir,
-            duration_seconds=video_module.DURATION_LONG
+            duration_seconds=video_module.DURATION_LONG,
+            score_home=params.get("score_home"),
+            score_away=params.get("score_away"),
         )
         logger.info(f"[OK] YouTube: {path_youtube}")
 

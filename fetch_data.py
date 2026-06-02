@@ -34,6 +34,11 @@ WC_COMPETITION_CODE = "WC"
 
 RSS_FALLBACK_URL = "https://feeds.bbci.co.uk/sport/football/rss.xml"
 
+STAGE_PRIORITY = {
+    "FINAL": 6, "THIRD_PLACE": 5, "SEMI_FINALS": 4,
+    "QUARTER_FINALS": 3, "ROUND_OF_16": 2, "GROUP_STAGE": 1,
+}
+
 EMERGENCY_FALLBACK_DATA = {
     "homeTeam": "Brazil",
     "awayTeam": "Argentina",
@@ -157,6 +162,16 @@ def fetch_from_rss_fallback() -> dict:
         return {}
 
 
+def select_best_match(parsed_matches: list) -> dict:
+    """
+    Sceglie il match più rilevante tra quelli disponibili.
+    Priorità: 1) match con risultato, 2) fase più avanzata del torneo.
+    """
+    finished = [m for m in parsed_matches if m.get("hasScore")]
+    pool = finished if finished else parsed_matches
+    return max(pool, key=lambda m: STAGE_PRIORITY.get(m.get("stage", ""), 0))
+
+
 def get_match_data() -> dict:
     """
     Funzione principale. Orchestrazione:
@@ -166,9 +181,13 @@ def get_match_data() -> dict:
     """
     matches = fetch_today_matches()
     if matches:
-        first_match = parse_match(matches[0])
-        logger.info(f"Dato finale: {first_match['homeTeam']} vs {first_match['awayTeam']} — fonte: API")
-        return first_match
+        parsed = [parse_match(m) for m in matches]
+        best = select_best_match(parsed)
+        logger.info(
+            f"Dato finale: {best['homeTeam']} vs {best['awayTeam']} "
+            f"(stage={best.get('stage','?')}, hasScore={best.get('hasScore')}) — fonte: API"
+        )
+        return best
 
     logger.warning("API non disponibile — provo RSS fallback.")
     rss_data = fetch_from_rss_fallback()
