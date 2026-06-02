@@ -63,18 +63,11 @@ jobs:
       - name: Install system deps
         run: sudo apt-get update && sudo apt-get install -y ffmpeg unzip
 
-      - name: Download fonts
+      - name: Verify fonts
         run: |
-          mkdir -p fonts
-          curl -sL "https://fonts.google.com/download?family=Bebas+Neue" -o /tmp/bebas.zip && \
-            unzip -o /tmp/bebas.zip -d /tmp/bebas/ && \
-            cp /tmp/bebas/BebasNeue-Regular.ttf fonts/ && \
-            echo "[OK] Bebas Neue installato" || echo "[WARN] Bebas Neue non scaricato - uso font di sistema"
-          curl -sL "https://fonts.google.com/download?family=Inter" -o /tmp/inter.zip && \
-            unzip -o /tmp/inter.zip -d /tmp/inter/ && \
-            cp /tmp/inter/static/Inter-Regular.ttf fonts/ && \
-            echo "[OK] Inter installato" || echo "[WARN] Inter non scaricato - uso font di sistema"
-          ls fonts/ || true
+          ls -lh fonts/
+          test -f fonts/BebasNeue-Regular.ttf && echo "[OK] BebasNeue presente" || echo "[WARN] BebasNeue mancante"
+          test -f fonts/Inter-Regular.ttf && echo "[OK] Inter presente" || echo "[WARN] Inter mancante"
 
       - name: Install Python deps
         run: pip install -r requirements.txt
