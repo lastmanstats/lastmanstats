@@ -13,7 +13,7 @@ import os
 import logging
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 try:
@@ -74,6 +74,31 @@ def get_accent_color(tla1: str, tla2: str) -> str:
     return TEAM_COLORS.get(tla1.upper(), TEAM_COLORS.get(tla2.upper(), DEFAULT_ACCENT_COLOR))
 
 
+def compute_timestamp_badge(match_data: dict) -> str:
+    """
+    Returns 'LIVE STATS — Xm post-match' for finished matches within 6h.
+    Uses kickoff + 110 min as estimated end time (no actual whistle time in API).
+    Returns '' for pre-match content so the badge is omitted entirely.
+    """
+    if not match_data.get("hasScore", False):
+        return ""
+    utc_date_str = match_data.get("utcDate", "")
+    if not utc_date_str:
+        return "LIVE STATS"
+    try:
+        kickoff = datetime.fromisoformat(utc_date_str.replace("Z", "+00:00"))
+        estimated_end = kickoff + timedelta(minutes=110)
+        now = datetime.now(timezone.utc)
+        delta_minutes = int((now - estimated_end).total_seconds() / 60)
+        if delta_minutes < 0:
+            return "LIVE STATS"
+        if delta_minutes > 360:
+            return "LIVE STATS"
+        return f"LIVE STATS — {delta_minutes}m post-match"
+    except (ValueError, TypeError):
+        return "LIVE STATS"
+
+
 def step_fetch_data() -> dict:
     logger.info("=== STEP 1: Fetch dati partita ===")
     fetch_module = import_module_safe("fetch_data")
@@ -130,7 +155,8 @@ def build_video_params(match_data: dict, caption_data: dict) -> dict:
         "subtext": subtext,
         "team1": home_tla,
         "team2": away_tla,
-        "accent_color": get_accent_color(home_tla, away_tla)
+        "accent_color": get_accent_color(home_tla, away_tla),
+        "timestamp_badge": compute_timestamp_badge(match_data),
     }
 
 
@@ -190,6 +216,7 @@ def step_generate_video(match_data: dict, caption_data: dict, output_date_dir: s
             team1=params["team1"],
             team2=params["team2"],
             accent_color=params["accent_color"],
+            timestamp_badge=params.get("timestamp_badge", ""),
             output_filename=f"tiktok_{output_date_dir}",
             output_subdir=output_date_dir,
             duration_seconds=video_module.DURATION_SHORT
@@ -202,6 +229,7 @@ def step_generate_video(match_data: dict, caption_data: dict, output_date_dir: s
             team1=params["team1"],
             team2=params["team2"],
             accent_color=params["accent_color"],
+            timestamp_badge=params.get("timestamp_badge", ""),
             output_filename=f"youtube_{output_date_dir}",
             output_subdir=output_date_dir,
             duration_seconds=video_module.DURATION_LONG

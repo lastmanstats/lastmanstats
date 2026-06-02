@@ -161,7 +161,8 @@ def get_text_height(font, text: str = "Ag") -> int:
 
 def render_frame(frame_index: int, headline: str, subtext: str,
                  team1: str, team2: str, accent_color: tuple,
-                 total_frames: int = TOTAL_FRAMES) -> Image.Image:
+                 total_frames: int = TOTAL_FRAMES,
+                 timestamp_badge: str = "") -> Image.Image:
     img = Image.new("RGB", (WIDTH, HEIGHT), color=(0, 0, 0))
     draw = ImageDraw.Draw(img)
 
@@ -253,6 +254,12 @@ def render_frame(frame_index: int, headline: str, subtext: str,
     draw_text_with_shadow(draw, ACCOUNT_WATERMARK, (wm_x, HEIGHT - 130), font_wm,
                           text_color=hex_to_rgb(COLOR_WATERMARK), shadow_offset=2)
 
+    # Timestamp badge: bottom-left, 36px Inter (spec: 24px — scaled up for legibility at ~390px phone width)
+    if timestamp_badge:
+        font_ts = load_font(36, bold=False)
+        draw_text_with_shadow(draw, timestamp_badge, (40, HEIGHT - 195), font_ts,
+                              text_color=hex_to_rgb(COLOR_WATERMARK), shadow_offset=2)
+
     return img
 
 
@@ -275,7 +282,8 @@ def generate_video(
     accent_color: str,
     output_filename: str = None,
     output_subdir: str = None,
-    duration_seconds: int = DURATION_SHORT
+    duration_seconds: int = DURATION_SHORT,
+    timestamp_badge: str = "",
 ) -> str:
     """
     Genera frame PNG con Pillow, assembla MP4 con FFmpeg.
@@ -325,7 +333,7 @@ def generate_video(
         print(f"[INFO] Generazione {total_frames} frame ({duration_seconds}s @ {FPS}fps)...")
 
         for i in range(total_frames):
-            frame = render_frame(i, headline, subtext, team1, team2, rgb, total_frames)
+            frame = render_frame(i, headline, subtext, team1, team2, rgb, total_frames, timestamp_badge)
             frame_path = os.path.join(tmp_dir, f"frame_{i:04d}.png")
             frame.save(frame_path, "PNG")
 

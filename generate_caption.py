@@ -33,10 +33,66 @@ GENERATION_CONFIG = {
     "max_output_tokens": 512,
 }
 
+# Five hook categories — one is selected per match context and injected into the prompt.
+# Forcing a single category prevents Gemini from averaging across all five (= generic output).
+HOOK_CATEGORIES = {
+    "surprise": (
+        "SORPRESA — Il risultato ha sfidato ogni previsione. Hook ad alto impatto, "
+        "usa il risultato reale. Esempio: 'GERMANY ELIMINATED BY MOROCCO 2-0!'"
+    ),
+    "exclusivity": (
+        "ESCLUSIVITÀ — Momento storico, non si ripeterà per anni. Enfatizza unicità e rarità. "
+        "Esempio: 'HISTORY MADE: FIRST-EVER WC SEMI BETWEEN THESE TWO!'"
+    ),
+    "challenge": (
+        "SFIDA ALLA CONOSCENZA — Testa il fan con una statistica inattesa, usa un numero o record concreto. "
+        "Esempio: 'SPAIN HAVEN\\'T LOST IN 22 WC GROUP GAMES. UNTIL NOW?'"
+    ),
+    "urgency": (
+        "URGENZA — Eliminazione o gloria stanotte, non ci sono seconde chance. Crea pressione emotiva. "
+        "Esempio: 'ONE TEAM GOES HOME TONIGHT. FOREVER.'"
+    ),
+    "confirmation": (
+        "CONFERMA DI SOSPETTI — Il favorito ha vinto come previsto, ma i numeri lo rendono più impressionante. "
+        "Esempio: 'BRAZIL WIN AGAIN. 5TH WORLD CUP NOW IN THEIR SIGHTS.'"
+    ),
+}
+
+
+def select_hook_category(match_data: dict) -> str:
+    has_score = match_data.get("hasScore", False)
+    stage = match_data.get("stage", "").upper()
+    home_score = match_data.get("scoreHome") or 0
+    away_score = match_data.get("scoreAway") or 0
+
+    knockout_stages = {"QUARTER_FINALS", "SEMI_FINALS", "FINAL", "THIRD_PLACE"}
+    is_knockout = any(k in stage for k in knockout_stages)
+
+    if not has_score:
+        return "urgency" if is_knockout else "challenge"
+
+    goal_diff = abs(home_score - away_score)
+    if goal_diff >= 3:
+        return "surprise"
+    if is_knockout:
+        return "exclusivity"
+    if goal_diff == 0:
+        return "challenge"
+    return "confirmation"
+
 
 def build_prompt(match_data: dict) -> str:
     source = match_data.get("source", "")
     has_score = match_data.get("hasScore", False)
+    category = select_hook_category(match_data)
+    category_instruction = HOOK_CATEGORIES[category]
+
+    # CTA is truthful: timing claim only when content is post-match
+    cta = (
+        "Follow for WC stats in 30 min from final whistle"
+        if has_score
+        else "Follow @lastmanstats for daily World Cup stats"
+    )
 
     if source == "rss_fallback_bbc":
         rss_title = match_data.get("rssTitle", "World Cup 2026 News")
@@ -63,24 +119,26 @@ Fase: {match_data.get('stage', 'FIFA World Cup 2026')}
 Competizione: FIFA World Cup 2026
 """
 
-    return f"""Sei un social media manager esperto di calcio internazionale.
-Genera contenuto virale per TikTok e YouTube Shorts sui Mondiali FIFA 2026.
+    return f"""Sei un social media manager esperto di calcio internazionale con 10 anni di esperienza su TikTok e YouTube Shorts.
+Genera contenuto virale per i Mondiali FIFA 2026. Il tuo account (@lastmanstats) pubblica stats entro 30 minuti dal fischio finale.
 
 {context_block}
+CATEGORIA HOOK: {category_instruction}
+
+CTA obbligatoria da includere nella caption: "{cta}"
 
 Genera ESATTAMENTE questo JSON (nessun testo fuori dal JSON):
 {{
-  "hook": "<frase d'impatto max 10 parole, in inglese, per catturare l'attenzione nei primi 2 secondi>",
-  "caption": "<caption per TikTok/YouTube max 150 caratteri, con 2-3 emoji, includi CTA (Follow for more!)>",
+  "hook": "<frase d'impatto max 10 parole, in inglese, segui RIGOROSAMENTE la categoria indicata>",
+  "caption": "<caption TikTok/YouTube max 150 caratteri, 2-3 emoji, termina con la CTA>",
   "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"]
 }}
 
 Regole:
-- hook: breve, drammatico, usa numeri o aggettivi forti (es. "BRAZIL DESTROYS ARGENTINA 3-0!")
-- caption: informativa ma coinvolgente, include emoji calcistiche
-- hashtags: 5 hashtag rilevanti, mix tra generici (WorldCup2026, FIFA) e specifici alla partita
-- Rispondi SOLO con il JSON, nessun markdown, nessuna spiegazione.
-"""
+- hook: segui RIGOROSAMENTE la categoria indicata, usa numeri reali dalla partita se disponibili
+- caption: informativa e coinvolgente, deve terminare con la CTA esatta fornita
+- hashtags: 5 hashtag, mix generici (WorldCup2026, FIFA2026) e specifici (squadre, nazione)
+- Rispondi SOLO con il JSON, nessun markdown, nessuna spiegazione."""
 
 
 def configure_gemini() -> Optional[str]:
