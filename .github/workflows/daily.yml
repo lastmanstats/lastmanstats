@@ -2,8 +2,49 @@ name: Daily Football Content
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # ogni giorno alle 08:00 UTC (10:00 ora italiana)
-  workflow_dispatch:      # trigger manuale per testare
+    - cron: '0 8 * * *'  # 08:00 UTC / 10:00 ora italiana
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Modalità di esecuzione'
+        required: true
+        default: 'normal'
+        type: choice
+        options:
+          - normal      # pipeline completa con upload YouTube
+          - dry-run     # fetch + caption, nessun video né upload
+          - upset       # template upset manuale (compila i campi sotto)
+      upset_template:
+        description: 'Template upset (solo se mode=upset)'
+        required: false
+        default: 'giant_killed'
+        type: choice
+        options:
+          - giant_killed
+          - record_goals
+          - penalty_drama
+          - comeback
+          - dark_horse
+      team1:
+        description: 'TLA squadra 1 es. GER (richiesto se mode=upset)'
+        required: false
+        default: ''
+      team2:
+        description: 'TLA squadra 2 es. JPN (richiesto se mode=upset con score)'
+        required: false
+        default: 'OPP'
+      team1_full:
+        description: 'Nome esteso squadra 1 per caption es. Germany (opzionale)'
+        required: false
+        default: ''
+      score_home:
+        description: 'Gol squadra 1 (solo se mode=upset)'
+        required: false
+        default: '0'
+      score_away:
+        description: 'Gol squadra 2 (solo se mode=upset)'
+        required: false
+        default: '0'
 
 jobs:
   generate-and-publish:
@@ -24,12 +65,10 @@ jobs:
       - name: Download fonts
         run: |
           mkdir -p fonts
-          # Bebas Neue da Google Fonts
           curl -sL "https://fonts.google.com/download?family=Bebas+Neue" -o /tmp/bebas.zip && \
             unzip -o /tmp/bebas.zip -d /tmp/bebas/ && \
             cp /tmp/bebas/BebasNeue-Regular.ttf fonts/ && \
             echo "[OK] Bebas Neue installato" || echo "[WARN] Bebas Neue non scaricato - uso font di sistema"
-          # Inter da Google Fonts
           curl -sL "https://fonts.google.com/download?family=Inter" -o /tmp/inter.zip && \
             unzip -o /tmp/inter.zip -d /tmp/inter/ && \
             cp /tmp/inter/static/Inter-Regular.ttf fonts/ && \
@@ -39,7 +78,16 @@ jobs:
       - name: Install Python deps
         run: pip install -r requirements.txt
 
-      - name: Run pipeline
+      - name: Validate upset inputs
+        if: ${{ inputs.mode == 'upset' }}
+        run: |
+          if [ -z "${{ inputs.team1 }}" ]; then
+            echo "ERROR: team1 obbligatorio in modalità upset."
+            exit 1
+          fi
+
+      - name: Run pipeline — normal
+        if: ${{ github.event_name == 'schedule' || inputs.mode == 'normal' }}
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -48,10 +96,36 @@ jobs:
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: python main.py
 
-      - name: Upload TikTok video artifact
+      - name: Run pipeline — dry-run
+        if: ${{ inputs.mode == 'dry-run' }}
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python main.py --dry-run
+
+      - name: Run pipeline — upset template
+        if: ${{ inputs.mode == 'upset' }}
+        run: |
+          python upset_templates.py \
+            "${{ inputs.upset_template }}" \
+            --team1 "${{ inputs.team1 }}" \
+            --team2 "${{ inputs.team2 }}" \
+            --team1-full "${{ inputs.team1_full }}" \
+            --score-home "${{ inputs.score_home }}" \
+            --score-away "${{ inputs.score_away }}"
+
+      - name: Upload TikTok artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tiktok-${{ github.run_id }}
           path: output/**/tiktok_*.mp4
+          retention-days: 7
+
+      - name: Upload YouTube artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-${{ github.run_id }}
+          path: output/**/youtube_*.mp4
           retention-days: 7
