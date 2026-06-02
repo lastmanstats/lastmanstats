@@ -125,19 +125,21 @@ Genera contenuto virale per i Mondiali FIFA 2026. Il tuo account (@lastmanstats)
 {context_block}
 CATEGORIA HOOK: {category_instruction}
 
-CTA obbligatoria da includere nella caption: "{cta}"
+CTA obbligatoria da includere nella caption e nella narration: "{cta}"
 
 Genera ESATTAMENTE questo JSON (nessun testo fuori dal JSON):
 {{
   "hook": "<frase d'impatto max 10 parole, in inglese, segui RIGOROSAMENTE la categoria indicata>",
   "caption": "<caption TikTok/YouTube max 150 caratteri, 2-3 emoji, termina con la CTA>",
-  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"]
+  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"],
+  "narration": "<voiceover 50-60 parole, inglese, tono commentatore sportivo (frasi corte, impatto immediato, niente emoji). Inizia con il concetto del hook. Aggiungi 2-3 fatti con tensione narrativa. Chiudi con: 'Follow Last Man Stats — stats within thirty minutes of the final whistle.'>"
 }}
 
 Regole:
 - hook: segui RIGOROSAMENTE la categoria indicata, usa numeri reali dalla partita se disponibili
 - caption: informativa e coinvolgente, deve terminare con la CTA esatta fornita
 - hashtags: 5 hashtag, mix generici (WorldCup2026, FIFA2026) e specifici (squadre, nazione)
+- narration: frasi cortissime, patetismo sportivo, pensato per essere letto da una voce AI — niente emoji, niente markdown
 - Rispondi SOLO con il JSON, nessun markdown, nessuna spiegazione."""
 
 
@@ -193,11 +195,14 @@ def validate_caption_output(data: dict) -> dict:
     hook = str(data.get("hook", "World Cup 2026 — Don't miss it!"))
     caption = str(data.get("caption", "Follow for World Cup 2026 daily updates! ⚽"))
     hashtags_raw = data.get("hashtags", [])
+    narration = str(data.get("narration", ""))
 
     if len(hook) > 80:
         hook = hook[:77] + "..."
     if len(caption) > 150:
         caption = caption[:147] + "..."
+    if len(narration) > 600:
+        narration = narration[:600]
 
     if isinstance(hashtags_raw, list):
         hashtags = [str(h) if str(h).startswith("#") else f"#{h}"
@@ -209,13 +214,19 @@ def validate_caption_output(data: dict) -> dict:
     while len(hashtags) < 3:
         hashtags.append(default_tags[len(hashtags)])
 
-    return {"hook": hook, "caption": caption, "hashtags": hashtags}
+    return {"hook": hook, "caption": caption, "hashtags": hashtags, "narration": narration}
 
 
 FALLBACK_CAPTION = {
     "hook": "WORLD CUP 2026 — History in the Making!",
     "caption": "The biggest tournament on earth is HERE! Every goal, every drama — follow for daily World Cup 2026 updates! ⚽🏆",
-    "hashtags": ["#WorldCup2026", "#FIFA2026", "#Football", "#Soccer", "#WC2026"]
+    "hashtags": ["#WorldCup2026", "#FIFA2026", "#Football", "#Soccer", "#WC2026"],
+    "narration": (
+        "The FIFA World Cup 2026. The biggest stage in football. "
+        "Thirty-two nations. One trophy. "
+        "Every stat, every number — delivered within thirty minutes of the final whistle. "
+        "Follow Last Man Stats for daily World Cup coverage."
+    ),
 }
 
 

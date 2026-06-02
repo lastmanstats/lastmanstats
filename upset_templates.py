@@ -119,6 +119,44 @@ def build_caption(template_key: str, team1_full: str, team2_full: str,
     return raw[:150]
 
 
+def build_narration(template_key: str, team1_full: str, team2_full: str,
+                    score_home: int, score_away: int) -> str:
+    cta = "Follow Last Man Stats — stats within thirty minutes of the final whistle."
+    if template_key == "giant_killed":
+        return (
+            f"{team1_full}. Out. In the group stage. "
+            f"The final score: {team2_full} {score_away}, {team1_full} {score_home}. "
+            f"One of the biggest shocks this World Cup has ever seen. "
+            f"The numbers don't lie. {cta}"
+        )
+    if template_key == "record_goals":
+        total = score_home + score_away
+        return (
+            f"{total} goals. In one World Cup game. "
+            f"{team1_full} {score_home}, {team2_full} {score_away}. "
+            f"History written tonight. This is why we watch football. {cta}"
+        )
+    if template_key == "penalty_drama":
+        return (
+            f"Penalties. The cruellest way to go out of a World Cup. "
+            f"{team1_full} hold their nerve. {team2_full} are heading home. "
+            f"Football is beautiful. Football is brutal. {cta}"
+        )
+    if template_key == "comeback":
+        return (
+            f"Two nil down. Most teams would have given up. "
+            f"Not {team1_full}. Final score: {score_home}-{score_away}. "
+            f"The greatest comeback story of this tournament. {cta}"
+        )
+    if template_key == "dark_horse":
+        return (
+            f"{team1_full} are in the semi-finals of the World Cup. "
+            f"Say that again. The semi-finals. "
+            f"Nobody predicted this. The numbers told a different story. Now we know. {cta}"
+        )
+    return f"World Cup 2026. Extraordinary scenes tonight. {cta}"
+
+
 def build_hashtags(template_key: str, team1: str, team2: str) -> list:
     base = ["#WorldCup2026", "#FIFA2026", "#Football"]
     extras = {
@@ -160,22 +198,36 @@ def generate_upset_video(
     subtext = build_subtext(template_key)
     caption = build_caption(template_key, team1_full, team2_full, score_home, score_away)
     hashtags = build_hashtags(template_key, team1, team2)
+    narration = build_narration(template_key, team1_full, team2_full, score_home, score_away)
     accent_color = get_accent(template_key, team1, accent_override)
 
     tpl = TEMPLATES[template_key]
-    print(f"\n[UPSET] Template: {tpl['display_name']}")
-    print(f"[UPSET] Headline: {headline}")
-    print(f"[UPSET] Hook:     {hook}")
-    print(f"[UPSET] Caption:  {caption}")
-    print(f"[UPSET] Tags:     {' '.join(hashtags)}")
-    print(f"[UPSET] Colore:   {accent_color}\n")
+    print(f"\n[UPSET] Template:  {tpl['display_name']}")
+    print(f"[UPSET] Headline:  {headline}")
+    print(f"[UPSET] Hook:      {hook}")
+    print(f"[UPSET] Caption:   {caption}")
+    print(f"[UPSET] Tags:      {' '.join(hashtags)}")
+    print(f"[UPSET] Narration: {narration[:80]}...")
+    print(f"[UPSET] Colore:    {accent_color}\n")
 
+    sys.path.insert(0, str(Path(__file__).parent))
     try:
-        sys.path.insert(0, str(Path(__file__).parent))
         import video_generator as vg
     except ImportError as e:
         print(f"[ERRORE] Impossibile importare video_generator: {e}")
         sys.exit(1)
+
+    # Genera audio — gracefully degraded se OPENAI_API_KEY assente
+    audio_path = ""
+    try:
+        import generate_audio as ga
+        today_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        from pathlib import Path as _Path
+        out_dir = _Path(__file__).parent / "output" / today_ts
+        out_dir.mkdir(parents=True, exist_ok=True)
+        audio_path = ga.generate_audio(narration, str(out_dir / f"narration_upset_{template_key}.mp3"))
+    except ImportError:
+        pass
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     slug = f"upset_{template_key}_{today}"
@@ -187,6 +239,7 @@ def generate_upset_video(
         team2=team2,
         accent_color=accent_color,
         timestamp_badge="LIVE STATS",
+        audio_path=audio_path,
         output_filename=f"tiktok_{slug}",
         output_subdir=today,
         duration_seconds=vg.DURATION_SHORT,
@@ -200,6 +253,7 @@ def generate_upset_video(
         team2=team2,
         accent_color=accent_color,
         timestamp_badge="LIVE STATS",
+        audio_path=audio_path,
         output_filename=f"youtube_{slug}",
         output_subdir=today,
         duration_seconds=vg.DURATION_LONG,

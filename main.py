@@ -199,9 +199,30 @@ def step_upload_youtube(video_path: str, caption_data: dict, match_data: dict) -
         return ""
 
 
-def step_generate_video(match_data: dict, caption_data: dict, output_date_dir: str) -> dict:
-    """Genera due video: 15s per TikTok e 62s per YouTube Shorts (Option C)."""
-    logger.info("=== STEP 3: Generazione video (TikTok 15s + YouTube 62s) ===")
+def step_generate_audio(caption_data: dict, output_dir: Path) -> str:
+    """Genera MP3 narration via OpenAI TTS. Restituisce path o '' se disabilitato/fallito."""
+    logger.info("=== STEP 2b: Generazione audio voiceover ===")
+    audio_module = import_module_safe("generate_audio")
+    if not audio_module:
+        logger.warning("Modulo generate_audio non disponibile — video senza audio.")
+        return ""
+    narration = caption_data.get("narration", "")
+    if not narration:
+        logger.warning("Narration assente nella caption — video senza audio.")
+        return ""
+    audio_path = str(output_dir / "narration.mp3")
+    result = audio_module.generate_audio(narration, audio_path)
+    if result:
+        logger.info(f"[OK] Audio: {audio_path}")
+    else:
+        logger.info("Audio non generato (OPENAI_API_KEY assente o TTS fallito) — pipeline continua.")
+    return result
+
+
+def step_generate_video(match_data: dict, caption_data: dict,
+                        output_date_dir: str, audio_path: str = "") -> dict:
+    """Genera due video: 63s per TikTok e 90s per YouTube Shorts, con audio se disponibile."""
+    logger.info("=== STEP 3: Generazione video (TikTok 63s + YouTube 90s) ===")
     video_module = import_module_safe("video_generator")
     if not video_module:
         logger.error("Modulo video_generator non disponibile.")
@@ -217,6 +238,7 @@ def step_generate_video(match_data: dict, caption_data: dict, output_date_dir: s
             team2=params["team2"],
             accent_color=params["accent_color"],
             timestamp_badge=params.get("timestamp_badge", ""),
+            audio_path=audio_path,
             output_filename=f"tiktok_{output_date_dir}",
             output_subdir=output_date_dir,
             duration_seconds=video_module.DURATION_SHORT
@@ -230,6 +252,7 @@ def step_generate_video(match_data: dict, caption_data: dict, output_date_dir: s
             team2=params["team2"],
             accent_color=params["accent_color"],
             timestamp_badge=params.get("timestamp_badge", ""),
+            audio_path=audio_path,
             output_filename=f"youtube_{output_date_dir}",
             output_subdir=output_date_dir,
             duration_seconds=video_module.DURATION_LONG
@@ -274,7 +297,8 @@ def main(dry_run: bool = False):
     video_paths = {"tiktok": "", "youtube": ""}
     youtube_video_id = ""
     if not dry_run:
-        video_paths = step_generate_video(match_data, caption_data, TODAY)
+        audio_path = step_generate_audio(caption_data, output_base)
+        video_paths = step_generate_video(match_data, caption_data, TODAY, audio_path)
         youtube_video_id = step_upload_youtube(
             video_paths.get("youtube", ""), caption_data, match_data
         )

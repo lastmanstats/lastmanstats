@@ -21,3 +21,7 @@ google-auth-oauthlib==1.2.1
 
 # Caricamento variabili d'ambiente da file .env (solo locale)
 python-dotenv==1.0.1
+
+# OpenAI TTS — voiceover automatico (voce onyx, ~€0.002/video)
+# Se OPENAI_API_KEY non è impostata, il modulo genera video senza audio senza errori bloccanti.
+openai>=1.35.0

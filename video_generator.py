@@ -35,8 +35,8 @@ COLOR_TITLE     = "#F0F4F8"   # Bianco ghiaccio (titoli)
 COLOR_ACCENT    = "#00FF87"   # Verde plasma (badge / accento brand)
 COLOR_WATERMARK = "#8892A4"   # Grigio sidereo (watermark)
 
-DURATION_SHORT = 15   # TikTok
-DURATION_LONG  = 62   # YouTube Shorts (>60s per Creator Rewards)
+DURATION_SHORT = 63   # TikTok (>60s richiesti per Creator Rewards monetization)
+DURATION_LONG  = 90   # YouTube Shorts
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 
@@ -284,6 +284,7 @@ def generate_video(
     output_subdir: str = None,
     duration_seconds: int = DURATION_SHORT,
     timestamp_badge: str = "",
+    audio_path: str = "",
 ) -> str:
     """
     Genera frame PNG con Pillow, assembla MP4 con FFmpeg.
@@ -343,17 +344,36 @@ def generate_video(
 
         print("[INFO] Assemblaggio MP4 con FFmpeg...")
 
-        ffmpeg_cmd = [
-            "ffmpeg", "-y",
-            "-framerate", str(FPS),
-            "-i", os.path.join(tmp_dir, "frame_%04d.png"),
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-crf", "23",
-            "-preset", "fast",
-            "-movflags", "+faststart",
-            str(output_path)
-        ]
+        has_audio = bool(audio_path and os.path.exists(audio_path))
+        if has_audio:
+            # Audio plays for its duration; video continues silently until duration_seconds.
+            # -t clips output to exact target length regardless of audio length.
+            ffmpeg_cmd = [
+                "ffmpeg", "-y",
+                "-framerate", str(FPS),
+                "-i", os.path.join(tmp_dir, "frame_%04d.png"),
+                "-i", audio_path,
+                "-c:v", "libx264",
+                "-c:a", "aac",
+                "-pix_fmt", "yuv420p",
+                "-crf", "23",
+                "-preset", "fast",
+                "-movflags", "+faststart",
+                "-t", str(duration_seconds),
+                str(output_path)
+            ]
+        else:
+            ffmpeg_cmd = [
+                "ffmpeg", "-y",
+                "-framerate", str(FPS),
+                "-i", os.path.join(tmp_dir, "frame_%04d.png"),
+                "-c:v", "libx264",
+                "-pix_fmt", "yuv420p",
+                "-crf", "23",
+                "-preset", "fast",
+                "-movflags", "+faststart",
+                str(output_path)
+            ]
 
         result = subprocess.run(
             ffmpeg_cmd,
