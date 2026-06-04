@@ -1,40 +1,27 @@
 """
 generate_caption.py
-Scopo: Genera hook, caption e hashtag per i video via Google Gemini Flash API.
-Dipendenze: google-generativeai
-Variabile d'ambiente richiesta: GEMINI_API_KEY
-
-Nota modelli: usa gemini-2.0-flash-exp con fallback a gemini-1.5-flash.
-Verifica modelli free tier aggiornati su: https://ai.google.dev/gemini-api/docs/models
+Scopo: Genera hook, caption e hashtag per i video via OpenAI gpt-4o-mini.
+Dipendenze: openai
+Variabile d'ambiente richiesta: OPENAI_API_KEY
 """
 
 import os
 import sys
 import json
 import logging
-import re
 from typing import Optional
 
 try:
-    import google.generativeai as genai
+    from openai import OpenAI
 except ImportError:
-    print("[ERRORE] google-generativeai non installato. Esegui: pip install google-generativeai")
+    print("[ERRORE] openai non installato. Esegui: pip install openai")
     sys.exit(1)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-MODEL_NAME = "gemini-2.0-flash"
-MODEL_FALLBACK = "gemini-1.5-flash"
+MODEL = "gpt-4o-mini"
 
-GENERATION_CONFIG = {
-    "temperature": 0.85,
-    "top_p": 0.95,
-    "max_output_tokens": 512,
-}
-
-# Five hook categories — one is selected per match context and injected into the prompt.
-# Forcing a single category prevents Gemini from averaging across all five (= generic output).
 HOOK_CATEGORIES = {
     "surprise": (
         "SORPRESA — Il risultato ha sfidato ogni previsione. Hook ad alto impatto, "
@@ -87,7 +74,6 @@ def build_prompt(match_data: dict) -> str:
     category = select_hook_category(match_data)
     category_instruction = HOOK_CATEGORIES[category]
 
-    # CTA is truthful: timing claim only when content is post-match
     cta = (
         "Follow for WC stats in 30 min from final whistle"
         if has_score
@@ -143,52 +129,27 @@ Regole:
 - Rispondi SOLO con il JSON, nessun markdown, nessuna spiegazione."""
 
 
-def configure_gemini() -> Optional[str]:
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+def call_openai(prompt: str) -> Optional[dict]:
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key:
-        logger.error("GEMINI_API_KEY non impostata come variabile d'ambiente.")
+        logger.error("OPENAI_API_KEY non impostata.")
         return None
-    genai.configure(api_key=api_key)
-    return api_key
-
-
-def call_gemini(prompt: str) -> Optional[str]:
-    for model_name in [MODEL_NAME, MODEL_FALLBACK]:
-        try:
-            logger.info(f"Chiamata Gemini con modello: {model_name}")
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                generation_config=GENERATION_CONFIG
-            )
-            response = model.generate_content(prompt)
-            if response.text:
-                return response.text.strip()
-            else:
-                logger.warning(f"Risposta vuota da {model_name}.")
-        except Exception as e:
-            logger.warning(f"Modello {model_name} fallito: {e}")
-            continue
-    return None
-
-
-def parse_gemini_response(raw_text: str) -> Optional[dict]:
-    cleaned = re.sub(r"```(?:json)?\s*", "", raw_text)
-    cleaned = re.sub(r"```\s*", "", cleaned).strip()
 
     try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        pass
-
-    match = re.search(r"\{.*\}", cleaned, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError:
-            pass
-
-    logger.error(f"Impossibile parsare la risposta Gemini:\n{raw_text[:500]}")
-    return None
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+            temperature=0.85,
+            max_tokens=512,
+        )
+        raw = response.choices[0].message.content
+        logger.info(f"Caption generata con {MODEL}")
+        return json.loads(raw)
+    except Exception as e:
+        logger.error(f"OpenAI caption fallita: {e}")
+        return None
 
 
 def validate_caption_output(data: dict) -> dict:
@@ -235,20 +196,10 @@ def generate_caption(match_data: dict) -> dict:
     Genera hook, caption e hashtags per la partita/notizia del giorno.
     Restituisce FALLBACK_CAPTION in caso di errore.
     """
-    if not configure_gemini():
-        logger.error("Gemini non configurato — uso fallback.")
-        return FALLBACK_CAPTION
+    parsed = call_openai(build_prompt(match_data))
 
-    prompt = build_prompt(match_data)
-    raw_response = call_gemini(prompt)
-
-    if not raw_response:
-        logger.error("Nessuna risposta da Gemini — uso fallback.")
-        return FALLBACK_CAPTION
-
-    parsed = parse_gemini_response(raw_response)
     if not parsed:
-        logger.error("Parsing fallito — uso fallback.")
+        logger.error("Nessuna risposta da OpenAI — uso fallback.")
         return FALLBACK_CAPTION
 
     result = validate_caption_output(parsed)

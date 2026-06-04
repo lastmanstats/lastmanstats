@@ -84,7 +84,6 @@ jobs:
         if: ${{ github.event_name == 'schedule' || inputs.mode == 'normal' }}
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
@@ -95,7 +94,7 @@ jobs:
         if: ${{ inputs.mode == 'dry-run' }}
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python main.py --dry-run
 
       - name: Run pipeline — upset template
@@ -116,7 +115,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tiktok-${{ github.run_id }}
-          path: output/**/tiktok_*.mp4
+          path: |
+            output/**/tiktok_*.mp4
+            output/**/metadata.json
           retention-days: 7
 
       - name: Upload YouTube artifact
