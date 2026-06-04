@@ -58,7 +58,7 @@ TEAM_COLORS = {
     "NED": "#FF6600", "USA": "#002868", "MEX": "#006847", "CAN": "#FF0000",
     "MAR": "#C1272D", "SEN": "#00853F", "JPN": "#BC002D", "KOR": "#003478",
 }
-DEFAULT_ACCENT_COLOR = "#00FF87"   # Palette A — verde plasma (fallback senza team color)
+DEFAULT_ACCENT_COLOR = "#F59E0B"   # Palette A — verde plasma (fallback senza team color)
 
 
 def import_module_safe(module_name: str):
