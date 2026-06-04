@@ -117,7 +117,7 @@ def step_fetch_data() -> dict:
 
 
 def step_generate_caption(match_data: dict) -> dict:
-    logger.info("=== STEP 2: Generazione caption con Gemini ===")
+    logger.info("=== STEP 2: Generazione caption con OpenAI ===")
     caption_module = import_module_safe("generate_caption")
     if not caption_module:
         logger.error("Modulo generate_caption non disponibile — uso fallback.")
