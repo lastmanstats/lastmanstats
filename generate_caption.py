@@ -118,14 +118,14 @@ Genera ESATTAMENTE questo JSON (nessun testo fuori dal JSON):
   "hook": "<frase d'impatto max 10 parole, in inglese, segui RIGOROSAMENTE la categoria indicata>",
   "caption": "<caption TikTok/YouTube max 150 caratteri, 2-3 emoji, termina con la CTA>",
   "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"],
-  "narration": "<voiceover 50-60 parole, inglese, tono commentatore sportivo (frasi corte, impatto immediato, niente emoji). Inizia con il concetto del hook. Aggiungi 2-3 fatti con tensione narrativa. Chiudi con: 'Follow Last Man Stats — stats within thirty minutes of the final whistle.'>"
+  "narration": "<voiceover 120-140 parole, inglese, tono commentatore sportivo (frasi corte e incalzanti, impatto immediato, niente emoji). Struttura: 1) Apri con il hook in forma di affermazione forte (2-3 frasi). 2) Sviluppa con 3-4 dati o fatti che costruiscono tensione narrativa progressiva, uno alla volta (5-6 frasi). 3) Inserisci un momento di pausa drammatica — una frase sola, corta, che lascia il dato nel silenzio. 4) Chiudi con: 'Follow Last Man Stats — stats within thirty minutes of the final whistle.' La narrazione deve riempire circa 40 secondi di parlato a ritmo normale.>"
 }}
 
 Regole:
 - hook: segui RIGOROSAMENTE la categoria indicata, usa numeri reali dalla partita se disponibili
 - caption: informativa e coinvolgente, deve terminare con la CTA esatta fornita
 - hashtags: 5 hashtag, mix generici (WorldCup2026, FIFA2026) e specifici (squadre, nazione)
-- narration: frasi cortissime, patetismo sportivo, pensato per essere letto da una voce AI — niente emoji, niente markdown
+- narration: 120-140 parole, struttura in 4 blocchi (hook → dati → pausa drammatica → CTA finale), frasi corte e incalzanti, niente emoji, niente markdown, deve durare ~40 secondi a voce normale
 - Rispondi SOLO con il JSON, nessun markdown, nessuna spiegazione."""
 
 
@@ -142,7 +142,7 @@ def call_openai(prompt: str) -> Optional[dict]:
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
             temperature=0.85,
-            max_tokens=512,
+            max_tokens=800,
         )
         raw = response.choices[0].message.content
         logger.info(f"Caption generata con {MODEL}")
@@ -162,8 +162,8 @@ def validate_caption_output(data: dict) -> dict:
         hook = hook[:77] + "..."
     if len(caption) > 150:
         caption = caption[:147] + "..."
-    if len(narration) > 600:
-        narration = narration[:600]
+    if len(narration) > 900:
+        narration = narration[:900]
 
     if isinstance(hashtags_raw, list):
         hashtags = [str(h) if str(h).startswith("#") else f"#{h}"
