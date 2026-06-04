@@ -126,33 +126,66 @@ def build_narration(template_key: str, team1_full: str, team2_full: str,
         return (
             f"{team1_full}. Out. In the group stage. "
             f"The final score: {team2_full} {score_away}, {team1_full} {score_home}. "
-            f"One of the biggest shocks this World Cup has ever seen. "
-            f"The numbers don't lie. {cta}"
+            f"Let that sink in. One of the most decorated nations in World Cup history. "
+            f"Gone. Before the knockout rounds even begin. "
+            f"The data gave us warning signs. The pressing numbers were down. "
+            f"The expected goals were there — on the wrong side. "
+            f"But nobody believed it would end like this. "
+            f"Three games. That is all you get. No second chances. No redemption arc. "
+            f"This is the World Cup. This is why nothing is ever certain. "
+            f"The giant is dead. {cta}"
         )
     if template_key == "record_goals":
         total = score_home + score_away
         return (
             f"{total} goals. In one World Cup game. "
             f"{team1_full} {score_home}, {team2_full} {score_away}. "
-            f"History written tonight. This is why we watch football. {cta}"
+            f"The highest-scoring game of this tournament. By a distance. "
+            f"Every time it seemed over, there was another goal. "
+            f"Goalkeepers will have nightmares. Defenders will have questions. "
+            f"The expected goals model had no frame of reference for this. "
+            f"Some matches rewrite the statistics in real time. "
+            f"This was one of them. {total} goals. "
+            f"Remember this one. History written tonight. "
+            f"This is why we watch football. {cta}"
         )
     if template_key == "penalty_drama":
         return (
             f"Penalties. The cruellest way to go out of a World Cup. "
+            f"Ninety minutes. Extra time. And still no answer. "
+            f"Five kicks. Five chances. That is all that separates glory from heartbreak. "
             f"{team1_full} hold their nerve. {team2_full} are heading home. "
-            f"Football is beautiful. Football is brutal. {cta}"
+            f"The data cannot prepare you for this moment. "
+            f"Penalty conversion rates, goalkeeper reach, psychological pressure — "
+            f"none of it matters when a player steps up alone. "
+            f"Football is the most human sport in the world. "
+            f"Beautiful. Brutal. Unforgettable. {cta}"
         )
     if template_key == "comeback":
         return (
-            f"Two nil down. Most teams would have given up. "
-            f"Not {team1_full}. Final score: {score_home}-{score_away}. "
-            f"The greatest comeback story of this tournament. {cta}"
+            f"Two nil down. "
+            f"At a World Cup, that is almost always the end of the story. "
+            f"Not tonight. Not {team1_full}. "
+            f"The statistics said the probability of winning from two goals down "
+            f"at this stage was under four percent. "
+            f"They did not read the statistics. "
+            f"Goal. Then another. Then the winner. Final score: {score_home}-{score_away}. "
+            f"Three goals. One half of football. "
+            f"The greatest comeback story of this tournament. "
+            f"Numbers explain football. They do not always predict it. {cta}"
         )
     if template_key == "dark_horse":
         return (
             f"{team1_full} are in the semi-finals of the World Cup. "
             f"Say that again. The semi-finals. "
-            f"Nobody predicted this. The numbers told a different story. Now we know. {cta}"
+            f"Before the tournament, the models gave them less than a two percent chance "
+            f"of reaching this stage. "
+            f"Four matches later, they are still standing. "
+            f"Every analyst underestimated their defensive structure. "
+            f"Every pundit overlooked their set-piece numbers. "
+            f"The data was always there. We just were not looking in the right place. "
+            f"Nobody predicted this. The numbers told a different story. "
+            f"Now we know. {cta}"
         )
     return f"World Cup 2026. Extraordinary scenes tonight. {cta}"
 
