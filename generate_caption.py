@@ -118,14 +118,14 @@ Genera ESATTAMENTE questo JSON (nessun testo fuori dal JSON):
   "hook": "<frase d'impatto max 10 parole, in inglese, segui RIGOROSAMENTE la categoria indicata>",
   "caption": "<caption TikTok/YouTube max 150 caratteri, 2-3 emoji, termina con la CTA>",
   "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"],
-  "narration": "<voiceover 120-140 parole, inglese, tono commentatore sportivo (frasi corte e incalzanti, impatto immediato, niente emoji). Struttura: 1) Apri con il hook in forma di affermazione forte (2-3 frasi). 2) Sviluppa con 3-4 dati o fatti che costruiscono tensione narrativa progressiva, uno alla volta (5-6 frasi). 3) Inserisci un momento di pausa drammatica — una frase sola, corta, che lascia il dato nel silenzio. 4) Chiudi con: 'Follow Last Man Stats — stats within thirty minutes of the final whistle.' La narrazione deve riempire circa 40 secondi di parlato a ritmo normale.>"
+  "narration": "<voiceover 160-180 parole, inglese, tono commentatore sportivo (frasi corte e incalzanti, impatto immediato, niente emoji). Struttura: 1) Apri con il hook in forma di affermazione forte (2-3 frasi). 2) Sviluppa con 4-5 dati o fatti che costruiscono tensione narrativa progressiva, uno alla volta (7-8 frasi). 3) Inserisci un momento di pausa drammatica — una frase sola, corta, che lascia il dato nel silenzio. 4) Chiudi con: 'Follow Last Man Stats — stats within thirty minutes of the final whistle.' La narrazione deve riempire circa 55 secondi di parlato a ritmo normale.>"
 }}
 
 Regole:
 - hook: segui RIGOROSAMENTE la categoria indicata, usa numeri reali dalla partita se disponibili
 - caption: informativa e coinvolgente, deve terminare con la CTA esatta fornita
 - hashtags: 5 hashtag, mix generici (WorldCup2026, FIFA2026) e specifici (squadre, nazione)
-- narration: 120-140 parole, struttura in 4 blocchi (hook → dati → pausa drammatica → CTA finale), frasi corte e incalzanti, niente emoji, niente markdown, deve durare ~40 secondi a voce normale
+- narration: 160-180 parole, struttura in 4 blocchi (hook → dati → pausa drammatica → CTA finale), frasi corte e incalzanti, niente emoji, niente markdown, deve durare ~55 secondi a voce normale
 - Rispondi SOLO con il JSON, nessun markdown, nessuna spiegazione."""
 
 
